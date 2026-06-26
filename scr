@@ -1,0 +1,698 @@
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.util.Scanner;
+
+
+class UserSession {
+    static String currentUser;
+}
+
+class UserAuth {
+
+    static final String USER_FILE = "projectdsa.txt";
+
+    static boolean register(String u, String p) {
+        try {
+            File f = new File(USER_FILE);
+            if (!f.exists()) f.createNewFile();
+
+            Scanner sc = new Scanner(f);
+            while (sc.hasNextLine())
+                if (sc.nextLine().startsWith(u + ",")) {
+                    sc.close();
+                    return false;
+                }
+            sc.close();
+
+            FileWriter fw = new FileWriter(f, true);
+            fw.write(u + "," + p + "\n");
+            fw.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    static boolean login(String u, String p) {
+        try {
+            File f = new File(USER_FILE);
+            if (!f.exists()) return false;
+
+            Scanner sc = new Scanner(f);
+            while (sc.hasNextLine()) {
+                String[] d = sc.nextLine().split(",");
+                // String line = sc.nextLine().trim();
+                //String[] d = line.split(",");
+                if (d[0].equals(u) && d[1].equals(p)) {
+                    sc.close();
+                    return true;
+                }
+            }
+            sc.close();
+        } catch (Exception e) {}
+        return false;
+    }
+}
+
+
+/*class ProgressManager {
+
+    static void saveProgress(String user, int level, int steps) {
+        try {
+            new File("progress").mkdir();
+            FileWriter fw = new FileWriter("progress/" + user + ".txt", true);
+            fw.write("Level " + level + " completed | Steps: " + steps + "\n");
+            fw.close();
+        } catch (Exception e) {}
+    }
+
+    static String loadProgress(String user) {
+        try {
+            File f = new File("progress/" + user + ".txt");
+            if (!f.exists()) return "No progress yet";
+
+            StringBuilder sb = new StringBuilder();
+            Scanner sc = new Scanner(f);
+            while (sc.hasNextLine())
+                sb.append(sc.nextLine()).append("\n");
+            sc.close();
+            return sb.toString();
+        } catch (Exception e) {
+            return "Error reading file";
+        }
+    }
+}*/
+
+
+class LoginScreen extends JFrame {
+
+    LoginScreen() {
+        setTitle("Login");
+        setSize(300,200);
+        setLayout(new GridLayout(4,2));
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        JTextField user = new JTextField();
+        JPasswordField pass = new JPasswordField();
+        JButton login = new JButton("Login");
+        JButton reg = new JButton("Register");
+
+        add(new JLabel("Username")); add(user);
+        add(new JLabel("Password")); add(pass);
+        add(login); add(reg);
+
+        login.addActionListener(e -> {
+            if (UserAuth.login(user.getText(), new String(pass.getPassword()))) {
+                UserSession.currentUser = user.getText();
+                dispose();
+                new WelcomeScreen();
+            } else JOptionPane.showMessageDialog(this,"Invalid Login");
+        });
+
+        reg.addActionListener(e -> {
+            if (UserAuth.register(user.getText(), new String(pass.getPassword())))
+                JOptionPane.showMessageDialog(this,"Registered");
+            else JOptionPane.showMessageDialog(this,"User Exists");
+        });
+
+        setVisible(true);
+    }
+     public static void main(String[] args) {
+     SwingUtilities.invokeLater(() -> new LoginScreen());
+    }
+}
+import javax.swing.*;
+import java.awt.*;
+
+public class WelcomeScreen extends JFrame {
+
+    public WelcomeScreen() {
+        setTitle("AI Maze Solver");
+        setSize(500, 300);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        JLabel title = new JLabel("WELCOME TO AI MAZE SOLVER", JLabel.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 22));
+        title.setForeground(Color.BLUE);
+        add(title, BorderLayout.CENTER);
+
+        JButton startButton = new JButton("START GAME");
+        startButton.setFont(new Font("Arial", Font.BOLD, 16));
+        startButton.setBackground(Color.GREEN);
+        startButton.setFocusPainted(false);
+
+        startButton.addActionListener(e -> {
+            dispose(); // close welcome screen
+            new LevelSelection();
+        });
+
+        JPanel panel = new JPanel();
+        panel.add(startButton);
+        add(panel, BorderLayout.SOUTH);
+
+        setVisible(true);
+    }
+
+
+}
+import javax.swing.*;
+import java.awt.*;
+
+public class LevelSelection extends JFrame {
+
+    public LevelSelection() {
+        setTitle("Select Level");
+        setSize(400, 300);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        JLabel title = new JLabel("SELECT LEVEL", JLabel.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 22));
+        add(title, BorderLayout.NORTH);
+
+        JButton l1 = new JButton("LEVEL 1 ");
+        JButton l2 = new JButton("LEVEL 2 ");
+        JButton l3 = new JButton("LEVEL 3 ");
+
+        JButton[] buttons = {l1, l2, l3};
+        for (JButton b : buttons) {
+            b.setFont(new Font("Arial", Font.BOLD, 16));
+            b.setBackground(Color.LIGHT_GRAY);
+            b.setFocusPainted(false);
+        }
+
+        l1.addActionListener(e -> { dispose(); new GameModeSelection(1); });
+        l2.addActionListener(e -> { dispose(); new GameModeSelection(2); });
+        l3.addActionListener(e -> { dispose(); new GameModeSelection(3); });
+
+        JPanel center = new JPanel(new GridLayout(3, 1, 10, 10));
+        center.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
+        center.add(l1);
+        center.add(l2);
+        center.add(l3);
+
+        add(center, BorderLayout.CENTER);
+        setVisible(true);
+    }
+}
+import javax.swing.*;
+import java.awt.*;
+
+public class GameModeSelection extends JFrame {
+
+    int level;
+
+    public GameModeSelection(int lvl) {
+        level = lvl;
+
+        setTitle("Select Game Mode - Level " + level);
+        setSize(400, 300);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        JLabel title = new JLabel("SELECT GAME MODE", JLabel.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 22));
+        add(title, BorderLayout.NORTH);
+
+        JButton manualBtn = new JButton("Manual");
+        JButton aiBtn = new JButton("AI Solver");
+        JButton aiVsUserBtn = new JButton("AI vs User");
+        JButton backBtn = new JButton("BACK");
+        JButton logoutbtn =new JButton("Logout");
+
+        JButton[] buttons = {manualBtn, aiBtn, aiVsUserBtn};
+        for (JButton b : buttons) {
+            b.setFont(new Font("Arial", Font.BOLD, 16));
+            b.setBackground(Color.LIGHT_GRAY);
+            b.setFocusPainted(false);
+        }
+
+        manualBtn.addActionListener(e -> { dispose(); new ManualMazeSolver(level); });
+        aiBtn.addActionListener(e -> { dispose(); new MazeGUI(level); });
+        aiVsUserBtn.addActionListener(e -> { dispose(); new AiVsUser(level); });
+        backBtn.addActionListener(e -> { dispose(); new LevelSelection(); });
+        logoutbtn.addActionListener(e -> {  System.exit(0);});
+
+
+
+        JPanel center = new JPanel(new GridLayout(3,1,10,10));
+        center.setBorder(BorderFactory.createEmptyBorder(30,60,30,60));
+        center.add(manualBtn);
+        center.add(aiBtn);
+        center.add(aiVsUserBtn);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        bottomPanel.add(backBtn);
+        bottomPanel.add(logoutbtn);
+
+        add(bottomPanel, BorderLayout.SOUTH);
+        add(center, BorderLayout.CENTER);
+        setVisible(true);
+    }
+}
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class ManualMazeSolver extends JFrame {
+
+    int rows, cols;
+    int[][] maze;
+    JButton[][] buttons;
+    int playerRow, playerCol;
+    int endRow, endCol;
+    int level;
+
+    public ManualMazeSolver(int lvl){
+        level = lvl;
+
+        if(level == 1){
+            rows = cols = 4;
+            maze = new int[][]{
+                    {0,0,1,0},{0,1,0,0},{0,0,0,1},{1,0,0,0}
+            };
+            playerRow = 0; playerCol = 0; endRow = 3; endCol = 3;
+        } else if(level == 2){
+            rows = cols = 8;
+            maze = new int[][]{
+                    {0,0,0,1,0,0,0,0},{1,1,0,1,0,1,1,0},{0,0,0,0,0,0,0,0},
+                    {0,1,1,1,1,1,0,0},{0,0,0,0,0,0,0,0},{0,1,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0},{0,1,1,1,1,1,0,0}
+            };
+            playerRow = 0; playerCol = 0; endRow = 7; endCol = 7;
+        } else {
+            rows = cols = 12;
+            maze = new int[][] {
+                    {0,0,1,0,0,1,0,0,0,1,0,0},{0,1,1,0,1,1,0,1,0,1,1,0},
+                    {0,0,0,0,0,0,0,1,0,0,0,0},{1,1,0,1,1,1,0,1,1,1,0,0},
+                    {0,0,0,0,0,0,0,0,0,1,0,1},{0,1,1,1,1,1,1,1,0,1,0,0},
+                    {0,0,0,0,0,0,0,1,0,0,0,0},{1,1,1,1,1,0,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0,0,0,0,0},{0,1,1,1,1,1,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0,0,0,0,0},{0,1,1,1,1,0,1,1,1,0,1,0}
+            };
+            playerRow = 0; playerCol = 0; endRow = 11; endCol = 11;
+        }
+
+        buttons = new JButton[rows][cols];
+        setTitle("Manual Maze Solver - Level "+level);
+        setSize(cols*60, rows*60+80);
+        setLayout(new BorderLayout());
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        JPanel grid = new JPanel(new GridLayout(rows, cols));
+        for(int r=0;r<rows;r++){
+            for(int c=0;c<cols;c++){
+                JButton btn = new JButton();
+                btn.setOpaque(true);
+                btn.setBackground(maze[r][c]==1?Color.BLACK:Color.WHITE);
+                buttons[r][c] = btn;
+                grid.add(btn);
+            }
+        }
+
+        buttons[playerRow][playerCol].setBackground(Color.GREEN);
+        buttons[endRow][endCol].setBackground(Color.RED);
+
+        add(grid, BorderLayout.CENTER);
+
+        JPanel panel = new JPanel();
+        JButton back = new JButton("BACK");
+        back.addActionListener(e -> { dispose(); new GameModeSelection(level); });
+        panel.add(back);
+        add(panel, BorderLayout.SOUTH);
+
+        addKeyListener(new KeyAdapter(){
+            public void keyPressed(KeyEvent e){
+                int newRow = playerRow;
+                int newCol = playerCol;
+                switch(e.getKeyCode()){
+                    case KeyEvent.VK_UP: newRow--; break;
+                    case KeyEvent.VK_DOWN: newRow++; break;
+                    case KeyEvent.VK_LEFT: newCol--; break;
+                    case KeyEvent.VK_RIGHT: newCol++; break;
+                }
+                if(canMove(newRow,newCol)){
+                    buttons[playerRow][playerCol].setBackground(Color.WHITE);
+                    playerRow = newRow; playerCol = newCol;
+                    buttons[playerRow][playerCol].setBackground(Color.GREEN);
+                    if(playerRow==endRow && playerCol==endCol){
+                        JOptionPane.showMessageDialog(null,"Congratulations! You solved the maze!");
+                    }
+                }
+            }
+        });
+
+        setFocusable(true);
+        setVisible(true);
+    }
+
+    boolean canMove(int r,int c){
+        return r>=0 && r<rows && c>=0 && c<cols && maze[r][c]==0;
+    }
+}
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+
+public class MazeGUI extends JFrame {
+
+    int rows, cols;
+    int[][] maze;
+    JButton[][] buttons;
+    int[] dr = {0, 1, 0, -1};
+    int[] dc = {1, 0, -1, 0};
+
+    Point start = null, end = null;
+    int level;
+
+    public MazeGUI(int lvl) {
+        level = lvl;
+
+        // Maze layouts per level
+        if (lvl == 1) {
+            rows = cols = 4;
+            maze = new int[][]{
+                    {0,0,1,0},
+                    {0,1,0,0},
+                    {0,0,0,1},
+                    {1,0,0,0}
+            };
+        } else if (lvl == 2) {
+            rows = cols = 8;
+            maze = new int[][]{
+                    {0,0,0,1,0,0,0,0},
+                    {1,1,0,1,0,1,1,0},
+                    {0,0,0,0,0,0,0,0},
+                    {0,1,1,1,1,1,0,0},
+                    {0,0,0,0,0,0,0,0},
+                    {0,1,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0},
+                    {0,1,1,1,1,1,0,0}
+            };
+        } else {
+            rows = cols = 12;
+            maze = new int[][] {
+                    {0,0,1,0,0,1,0,0,0,1,0,0},
+                    {0,1,1,0,1,1,0,1,0,1,1,0},
+                    {0,0,0,0,0,0,0,1,0,0,0,0},
+                    {1,1,0,1,1,1,0,1,1,1,0,0},
+                    {0,0,0,0,0,0,0,0,0,1,0,1},
+                    {0,1,1,1,1,1,1,1,0,1,0,0},
+                    {0,0,0,0,0,0,0,1,0,0,0,0},
+                    {1,1,1,1,1,0,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0,0,0,0,0},
+                    {0,1,1,1,1,1,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0,0,0,0,0},
+                    {0,1,1,1,1,0,1,1,1,0,1,0}
+            };
+        }
+
+        buttons = new JButton[rows][cols];
+
+        setTitle("AI Maze Solver - Level " + level);
+        setSize(cols*60, rows*60+80);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        JPanel grid = new JPanel(new GridLayout(rows, cols));
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                JButton btn = new JButton();
+                btn.setOpaque(true);
+                btn.setBackground(maze[r][c]==1?Color.BLACK:Color.WHITE);
+                int rr=r, cc=c;
+
+                btn.addMouseListener(new MouseAdapter() {
+                    public void mousePressed(MouseEvent e) {
+                        if (maze[rr][cc]==1) return;
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            if (start!=null) buttons[start.x][start.y].setBackground(Color.WHITE);
+                            start = new Point(rr,cc);
+                            btn.setBackground(Color.GREEN);
+                        }
+                        if (SwingUtilities.isRightMouseButton(e)) {
+                            if (end!=null) buttons[end.x][end.y].setBackground(Color.WHITE);
+                            end = new Point(rr,cc);
+                            btn.setBackground(Color.RED);
+                        }
+                    }
+                });
+
+                buttons[r][c] = btn;
+                grid.add(btn);
+            }
+        }
+
+        JPanel panel = new JPanel();
+        JButton solve = new JButton("SOLVE");
+        JButton back = new JButton("BACK");
+
+        solve.addActionListener(e -> solveMaze());
+        back.addActionListener(e -> { dispose(); new GameModeSelection(level); });
+
+        panel.add(solve);
+        panel.add(back);
+
+        add(grid, BorderLayout.CENTER);
+        add(panel, BorderLayout.SOUTH);
+        setVisible(true);
+    }
+
+    boolean valid(int r,int c,boolean[][] visited){
+        return r>=0 && c>=0 && r<rows && c<cols && maze[r][c]==0 && !visited[r][c];
+    }
+
+    void solveMaze(){
+        if(start==null || end==null){
+            JOptionPane.showMessageDialog(this,"Select Start (Green) and End (Red)");
+            return;
+        }
+
+        boolean[][] visited = new boolean[rows][cols];
+        Point[][] parent = new Point[rows][cols];
+        Queue<Point> q = new LinkedList<>();
+        q.add(start);
+        visited[start.x][start.y] = true;
+
+        boolean found = false;
+        while(!q.isEmpty() && !found){
+            Point cur = q.poll();
+            for(int i=0;i<4;i++){
+                int nr=cur.x+dr[i], nc=cur.y+dc[i];
+                if(valid(nr,nc,visited)){
+                    visited[nr][nc]=true;
+                    parent[nr][nc]=cur;
+                    q.add(new Point(nr,nc));
+                    if(nr==end.x && nc==end.y){
+                        found=true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if(!found){ JOptionPane.showMessageDialog(this,"No path found!"); return; }
+
+        Point p=end;
+        while(!p.equals(start)){
+            if(!p.equals(end)) buttons[p.x][p.y].setBackground(Color.YELLOW);
+            p = parent[p.x][p.y];
+        }
+    }
+
+
+}
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.util.List;
+import javax.swing.Timer;
+
+public class AiVsUser extends JFrame {
+
+    int rows, cols, level;
+    int[][] maze;// 2d array for maze
+    JButton[][] buttons;  // 2d array for maze gui
+    int playerRow, playerCol, endRow, endCol;
+    int[] dr = {0, 1, 0, -1}, dc = {1, 0, -1, 0}; //array for moving left righ up down instead of making seperate functions
+
+    java.util.List<Point> aiPath;//list mein ai ka bfs path store ho raha
+    int userSteps = 0;
+    boolean userFinished = false;
+
+    // level banany kay liye yeh banaya
+    public AiVsUser(int lvl) {
+        level = lvl;
+        setupLevel(lvl);
+
+        // us page ka title,size sab adjust kiya
+        setTitle("AI vs User Maze - Level " + level);
+        setSize(cols * 60, rows * 60 + 120);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        //maze gui kay cell kay liye 2d array mein rows and columns initialize kiye
+        buttons = new JButton[rows][cols];
+        JPanel grid = new JPanel(new GridLayout(rows, cols));//yeh in oanel banaya us ka naam grid rakha us mein maze aye ga
+
+        //yeh maze ki wall or path us ka color
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                buttons[r][c] = new JButton();
+                buttons[r][c].setOpaque(true);// cells ko color karny kay liye
+                buttons[r][c].setBackground(maze[r][c] == 1 ? Color.BLACK : Color.WHITE);//agar 1 hai tou black warna white
+                grid.add(buttons[r][c]); //panel mein add kar rahay buttons loop say sath sath
+            }
+        }
+
+        add(grid, BorderLayout.CENTER);//gird panel ko center mein adjust kiya
+        buttons[playerRow][playerCol].setBackground(Color.GREEN);//player row or column user ki intial position hotii us ko green kar diya
+        buttons[endRow][endCol].setBackground(Color.RED);// end position ko red
+
+        // User movement  key listener key board ki movement ko able karta  key adapter kay pass 3 methods hoty wo best approach ky liye use hota
+        //key pressed ho gyi method run ho ga phir event dekhti kon sa press huwa up righ left down move
+        //!notfinished move it us ko handle move handle karti movement ko
+        addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if (!userFinished) handleUserMove(e);
+            }
+        });
+
+        setFocusable(true);
+        setVisible(true);
+        // back button
+        JButton backBtn = new JButton("BACK");
+        backBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        backBtn.addActionListener(e -> {
+            dispose();
+            new GameModeSelection(level);
+        });
+
+        // back button ko bottom panel mein add kiya
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 15, 0));
+        bottomPanel.add(backBtn);
+
+        add(bottomPanel, BorderLayout.SOUTH);
+
+    }
+//level set kiya
+    void setupLevel(int lvl) {
+        if (lvl == 1) { // first level 4x4 ka hai
+            rows = cols = 4;// 4 lenght hai
+            maze = new int[][]{
+                    {0,0,1,0},{0,1,0,0},{0,0,0,1},{1,0,0,0}
+            };
+            playerRow = playerCol = 0; endRow = endCol = 3;// defining strat and end point
+        } else if (lvl == 2) {
+            rows = cols = 8;
+            maze = new int[][]{// 8x8 maze
+                    {0,0,0,1,0,0,0,0},{1,1,0,1,0,1,1,0},{0,0,0,0,0,0,0,0},{0,1,1,1,1,1,0,0},
+                    {0,0,0,0,0,0,0,0},{0,1,1,1,1,1,1,0},{0,0,0,0,0,0,0,0},{0,1,1,1,1,1,0,0}
+            };
+            playerRow = playerCol = 0; endRow = endCol = 7;// start end pint
+        } else {
+            rows = cols = 12;
+            maze = new int[][]{ //12x12
+                    {0,0,1,0,0,1,0,0,0,1,0,0},{0,1,1,0,1,1,0,1,0,1,1,0},{0,0,0,0,0,0,0,1,0,0,0,0},{1,1,0,1,1,1,0,1,1,1,0,0},
+                    {0,0,0,0,0,0,0,0,0,1,0,1},{0,1,1,1,1,1,1,1,0,1,0,0},{0,0,0,0,0,0,0,1,0,0,0,0},{1,1,1,1,1,0,1,1,1,1,1,0},
+                    {0,0,0,0,0,0,0,0,0,0,0,0},{0,1,1,1,1,1,1,1,1,1,1,0},{0,0,0,0,0,0,0,0,0,0,0,0},{0,1,1,1,1,0,1,1,1,0,1,0}
+            };
+            playerRow = playerCol = 0; endRow = endCol = 11;//start and end
+        }
+    }
+
+    void handleUserMove(KeyEvent e) {//handle the movement
+        int r = playerRow, c = playerCol;// r and c temperary variable moves dekhny kay liye
+        switch(e.getKeyCode()) {// move karwa raha
+            case KeyEvent.VK_UP: r--; break;
+            case KeyEvent.VK_DOWN: r++; break;
+            case KeyEvent.VK_LEFT: c--; break;
+            case KeyEvent.VK_RIGHT: c++; break;
+        }
+        if (r>=0 && r<rows && c>=0 && c<cols && maze[r][c]==0) {//yeh condition treu ho gyi kay user maze mein hi move kat raha or path ho wall nhi
+            buttons[playerRow][playerCol].setBackground(Color.WHITE);//pehlay green jab user tha jab move ho gaya white kar diya
+            playerRow = r; playerCol = c; //player ki  position ko according to next move set kar ragy
+            buttons[playerRow][playerCol].setBackground(Color.GREEN);//next jahan hai player us ko green kar diya
+            userSteps++;//user kay step count ho rahy sath
+            if (playerRow==endRow && playerCol==endCol) {//jab player net mein a jaye ga
+                userFinished = true;//true ho gay a
+                aiSolveMaze();//ai solve kary ga
+            }
+        }
+    }
+
+    //ai solve kar raha by using bfs
+    void aiSolveMaze() {
+        aiPath = bfsPath(new Point(0,0), new Point(endRow,endCol));// aipath list hai us mein bf path mein start and end point day rahy
+        int aiSteps = aiPath.size()-1;// ai steps jo hain list say =1 tak chalny chahiye
+
+        Timer timer = new Timer(200, null);//yeh ai ki path ko animate karta har cell mein 200 millisec tak rukta
+        final int[] idx = {0};//aray hai jo track kr rahi ai ky path ko intial star pr hai
+        timer.addActionListener(e -> {
+            if(idx[0]<aiPath.size()) {// array us kay size say small hai
+                Point p = aiPath.get(idx[0]);//current position lety point sy
+                if(!p.equals(new Point(endRow,endCol))) buttons[p.x][p.y].setBackground(Color.CYAN);//color kr diya adr end nhi
+                idx[0]++; //increment
+            } else {
+                timer.stop();
+                showResult(aiSteps);
+            }
+        });
+        timer.start();
+    }
+
+
+    void showResult(int aiSteps) {
+        String msg;
+        if(userSteps>aiSteps) msg="AI wins!\nAI: "+aiSteps+"\nUser: "+userSteps;
+        else if(userSteps<aiSteps) msg="User wins!\nUser: "+userSteps+"\nAI: "+aiSteps;
+        else msg="DRAW!\nSteps: "+aiSteps;
+
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JLabel("<html><center>"+msg.replaceAll("\n","<br>")+"</center></html>", SwingConstants.CENTER), BorderLayout.CENTER);
+
+        JOptionPane.showMessageDialog(this, panel, "Result", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+
+    List<Point> bfsPath(Point start, Point end) {//list  for bfs pointing cells
+        boolean[][] visited = new boolean[rows][cols];//array to storevisited cell
+        Point[][] parent = new Point[rows][cols];// parent cell
+        Queue<Point> q = new LinkedList<>();//queue to peform bfs throgh linked list
+        q.add(start); //add start cell in queue
+        visited[start.x][start.y]=true;// add start cell as cisited in visited array sp avoid re visiting
+
+        while(!q.isEmpty()) {//jab tak queue is not empty
+            Point cur = q.poll();// crrent position hai and pol to remove first element
+            if(cur.equals(end)) break; // agar end hai tou bfs stop
+            for(int i=0;i<4;i++) {// yeh ab neighbouring cell ko check ksry gs
+                int nr=cur.x+dr[i], nc=cur.y+dc[i];
+                if(nr>=0 && nr<rows && nc>=0 && nc<cols && maze[nr][nc]==0 && !visited[nr][nc]) {// condition full fill
+                    visited[nr][nc]=true; // visited mein add kar do neighbouring ko
+                    parent[nr][nc]=cur; //jo current tha us ko parent mein
+                    q.add(new Point(nr,nc));// add in queue
+                }
+            }
+        }
+
+        List<Point> path = new ArrayList<>();//make another list with have shortest path
+        for(Point p=end;p!=null;p=parent[p.x][p.y]) path.add(0,p);// extrate the parent cell from array from end to start
+        return path; //return path
+    }
+
+
+}
