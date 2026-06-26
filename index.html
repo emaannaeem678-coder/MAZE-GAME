@@ -1,0 +1,723 @@
+```html id="mazefullhtmlcode"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Maze Solver</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:0;
+    font-family:Arial;
+    background:#f4f4f4;
+    text-align:center;
+}
+
+.container{
+    width:95%;
+    margin:auto;
+    padding:20px;
+}
+
+.section{
+    display:none;
+}
+
+input{
+    padding:10px;
+    margin:10px;
+    width:250px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+
+button{
+    padding:12px 20px;
+    margin:10px;
+    border:none;
+    border-radius:5px;
+    background:#007bff;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+}
+
+button:hover{
+    background:#0056b3;
+}
+
+#maze{
+    display:grid;
+    justify-content:center;
+    margin-top:20px;
+}
+
+.cell{
+    width:40px;
+    height:40px;
+    border:1px solid #999;
+}
+
+.wall{
+    background:black;
+}
+
+.path{
+    background:white;
+}
+
+.player{
+    background:green;
+}
+
+.goal{
+    background:red;
+}
+
+.ai{
+    background:cyan;
+}
+
+.visited{
+    background:yellow;
+}
+
+h1,h2{
+    color:#333;
+}
+
+.info{
+    margin-top:10px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- LOGIN SCREEN -->
+
+<div id="loginSection">
+
+<h1>AI MAZE SOLVER</h1>
+
+<input type="text" id="username" placeholder="Enter Username">
+
+<br>
+
+<input type="password" id="password" placeholder="Enter Password">
+
+<br>
+
+<button onclick="registerUser()">REGISTER</button>
+
+<button onclick="loginUser()">LOGIN</button>
+
+<p id="loginMsg"></p>
+
+</div>
+
+<!-- WELCOME -->
+
+<div id="welcomeSection" class="section">
+
+<h1>WELCOME TO AI MAZE SOLVER</h1>
+
+<button onclick="showLevels()">
+START GAME
+</button>
+
+</div>
+
+<!-- LEVEL SELECTION -->
+
+<div id="levelSection" class="section">
+
+<h2>SELECT LEVEL</h2>
+
+<button onclick="selectLevel(1)">LEVEL 1</button>
+
+<button onclick="selectLevel(2)">LEVEL 2</button>
+
+<button onclick="selectLevel(3)">LEVEL 3</button>
+
+<br>
+
+<button onclick="logout()">
+LOGOUT
+</button>
+
+</div>
+
+<!-- GAME MODES -->
+
+<div id="modeSection" class="section">
+
+<h2>SELECT GAME MODE</h2>
+
+<button onclick="startManual()">
+MANUAL MODE
+</button>
+
+<button onclick="startAI()">
+AI SOLVER
+</button>
+
+<button onclick="startAiVsUser()">
+AI VS USER
+</button>
+
+<br>
+
+<button onclick="showLevels()">
+BACK
+</button>
+
+<button onclick="logout()">
+LOGOUT
+</button>
+
+</div>
+
+<!-- GAME SECTION -->
+
+<div id="gameSection" class="section">
+
+<h2 id="gameTitle"></h2>
+
+<div class="info" id="stepInfo"></div>
+
+<div id="maze"></div>
+
+<br>
+
+<button onclick="solveMaze()">
+SOLVE MAZE
+</button>
+
+<button onclick="backModes()">
+BACK
+</button>
+
+<button onclick="logout()">
+LOGOUT
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+/* USER SYSTEM */
+
+let currentUser="";
+
+function registerUser(){
+
+    let u =
+    document.getElementById("username").value;
+
+    let p =
+    document.getElementById("password").value;
+
+    if(u==="" || p===""){
+
+        alert("Enter Username & Password");
+        return;
+    }
+
+    if(localStorage.getItem(u)){
+
+        alert("User Already Exists");
+        return;
+    }
+
+    localStorage.setItem(u,p);
+
+    document.getElementById("loginMsg")
+    .innerHTML="Registration Successful";
+}
+
+function loginUser(){
+
+    let u =
+    document.getElementById("username").value;
+
+    let p =
+    document.getElementById("password").value;
+
+    let saved =
+    localStorage.getItem(u);
+
+    if(saved===p){
+
+        currentUser=u;
+
+        showSection("welcomeSection");
+    }
+
+    else{
+
+        alert("Invalid Login");
+    }
+}
+
+/* SECTION CONTROL */
+
+function showSection(id){
+
+    let sections =
+    document.getElementsByClassName("section");
+
+    for(let i=0;i<sections.length;i++){
+
+        sections[i].style.display="none";
+    }
+
+    document.getElementById("loginSection")
+    .style.display="none";
+
+    document.getElementById(id)
+    .style.display="block";
+}
+
+/* LEVELS */
+
+function showLevels(){
+
+    showSection("levelSection");
+}
+
+let currentLevel=1;
+let currentMode="manual";
+
+function selectLevel(level){
+
+    currentLevel=level;
+
+    showSection("modeSection");
+}
+
+/* MAZES */
+
+let mazes={
+
+1:[
+[0,0,1,0],
+[0,1,0,0],
+[0,0,0,1],
+[1,0,0,0]
+],
+
+2:[
+[0,0,0,1,0,0,0,0],
+[1,1,0,1,0,1,1,0],
+[0,0,0,0,0,0,0,0],
+[0,1,1,1,1,1,0,0],
+[0,0,0,0,0,0,0,0],
+[0,1,1,1,1,1,1,0],
+[0,0,0,0,0,0,0,0],
+[0,1,1,1,1,1,0,0]
+],
+
+3:[
+[0,0,1,0,0,1,0,0,0,1,0,0],
+[0,1,1,0,1,1,0,1,0,1,1,0],
+[0,0,0,0,0,0,0,1,0,0,0,0],
+[1,1,0,1,1,1,0,1,1,1,0,0],
+[0,0,0,0,0,0,0,0,0,1,0,1],
+[0,1,1,1,1,1,1,1,0,1,0,0],
+[0,0,0,0,0,0,0,1,0,0,0,0],
+[1,1,1,1,1,0,1,1,1,1,1,0],
+[0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,1,1,1,1,1,1,1,1,0],
+[0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,1,1,1,0,1,1,1,0,1,0]
+]
+
+};
+
+let maze=[];
+let playerRow=0;
+let playerCol=0;
+let endRow=0;
+let endCol=0;
+
+let userSteps=0;
+
+/* START MODES */
+
+function startManual(){
+
+    currentMode="manual";
+
+    startGame();
+}
+
+function startAI(){
+
+    currentMode="ai";
+
+    startGame();
+}
+
+function startAiVsUser(){
+
+    currentMode="aivsuser";
+
+    startGame();
+}
+
+/* START GAME */
+
+function startGame(){
+
+    maze=mazes[currentLevel];
+
+    playerRow=0;
+    playerCol=0;
+
+    endRow=maze.length-1;
+    endCol=maze[0].length-1;
+
+    userSteps=0;
+
+    showSection("gameSection");
+
+    document.getElementById("gameTitle")
+    .innerHTML=
+    "LEVEL "+currentLevel+
+    " - "+currentMode.toUpperCase();
+
+    renderMaze();
+}
+
+/* RENDER MAZE */
+
+function renderMaze(){
+
+    let mazeDiv =
+    document.getElementById("maze");
+
+    mazeDiv.innerHTML="";
+
+    mazeDiv.style.gridTemplateColumns=
+    `repeat(${maze[0].length},40px)`;
+
+    for(let r=0;r<maze.length;r++){
+
+        for(let c=0;c<maze[r].length;c++){
+
+            let cell =
+            document.createElement("div");
+
+            cell.classList.add("cell");
+
+            if(maze[r][c]===1){
+
+                cell.classList.add("wall");
+            }
+
+            else{
+
+                cell.classList.add("path");
+            }
+
+            if(r===playerRow &&
+               c===playerCol){
+
+                cell.classList.add("player");
+            }
+
+            if(r===endRow &&
+               c===endCol){
+
+                cell.classList.add("goal");
+            }
+
+            mazeDiv.appendChild(cell);
+        }
+    }
+
+    document.getElementById("stepInfo")
+    .innerHTML=
+    "USER STEPS : "+userSteps;
+}
+
+/* KEYBOARD CONTROLS */
+
+document.addEventListener("keydown",function(e){
+
+    if(currentMode!=="manual" &&
+       currentMode!=="aivsuser") return;
+
+    let nr=playerRow;
+    let nc=playerCol;
+
+    if(e.key==="ArrowUp") nr--;
+
+    if(e.key==="ArrowDown") nr++;
+
+    if(e.key==="ArrowLeft") nc--;
+
+    if(e.key==="ArrowRight") nc++;
+
+    if(valid(nr,nc)){
+
+        playerRow=nr;
+        playerCol=nc;
+
+        userSteps++;
+
+        renderMaze();
+
+        if(playerRow===endRow &&
+           playerCol===endCol){
+
+            if(currentMode==="manual"){
+
+                alert("Congratulations! Maze Solved");
+            }
+
+            if(currentMode==="aivsuser"){
+
+                aiVsUserResult();
+            }
+        }
+    }
+});
+
+/* VALID MOVE */
+
+function valid(r,c){
+
+    return r>=0 &&
+           c>=0 &&
+           r<maze.length &&
+           c<maze[0].length &&
+           maze[r][c]===0;
+}
+
+/* BFS SOLVER */
+
+function solveMaze(){
+
+    if(currentMode==="manual"){
+
+        alert("Manual Mode Has No AI Solver");
+        return;
+    }
+
+    let queue=[[0,0]];
+
+    let visited={};
+
+    let parent={};
+
+    visited["0,0"]=true;
+
+    let dirs=[
+    [0,1],
+    [1,0],
+    [0,-1],
+    [-1,0]
+    ];
+
+    while(queue.length>0){
+
+        let cur=queue.shift();
+
+        let r=cur[0];
+        let c=cur[1];
+
+        if(r===endRow &&
+           c===endCol){
+
+            break;
+        }
+
+        for(let d of dirs){
+
+            let nr=r+d[0];
+            let nc=c+d[1];
+
+            if(valid(nr,nc) &&
+               !visited[nr+","+nc]){
+
+                visited[nr+","+nc]=true;
+
+                parent[nr+","+nc]=[r,c];
+
+                queue.push([nr,nc]);
+            }
+        }
+    }
+
+    let path=[];
+
+    let cur=[endRow,endCol];
+
+    while(cur){
+
+        path.push(cur);
+
+        cur=
+        parent[cur[0]+","+cur[1]];
+    }
+
+    path.reverse();
+
+    animatePath(path);
+}
+
+/* ANIMATE AI PATH */
+
+function animatePath(path){
+
+    let cells=
+    document.getElementsByClassName("cell");
+
+    let i=0;
+
+    let interval=
+    setInterval(function(){
+
+        if(i>=path.length){
+
+            clearInterval(interval);
+
+            return;
+        }
+
+        let r=path[i][0];
+        let c=path[i][1];
+
+        let index=
+        r*maze[0].length+c;
+
+        if(!(r===0 && c===0) &&
+           !(r===endRow && c===endCol)){
+
+            cells[index]
+            .classList.add("visited");
+        }
+
+        i++;
+
+    },200);
+}
+
+/* AI VS USER RESULT */
+
+function aiVsUserResult(){
+
+    let aiSteps =
+    bfsShortestPathLength();
+
+    let msg="";
+
+    if(userSteps<aiSteps){
+
+        msg=
+        "USER WINS!\n"+
+        "User Steps: "+userSteps+
+        "\nAI Steps: "+aiSteps;
+    }
+
+    else if(userSteps>aiSteps){
+
+        msg=
+        "AI WINS!\n"+
+        "AI Steps: "+aiSteps+
+        "\nUser Steps: "+userSteps;
+    }
+
+    else{
+
+        msg=
+        "DRAW!\n"+
+        "Steps: "+aiSteps;
+    }
+
+    alert(msg);
+
+    solveMaze();
+}
+
+/* BFS SHORTEST PATH */
+
+function bfsShortestPathLength(){
+
+    let queue=[[0,0,0]];
+
+    let visited={};
+
+    visited["0,0"]=true;
+
+    let dirs=[
+    [0,1],
+    [1,0],
+    [0,-1],
+    [-1,0]
+    ];
+
+    while(queue.length>0){
+
+        let cur=queue.shift();
+
+        let r=cur[0];
+        let c=cur[1];
+        let dist=cur[2];
+
+        if(r===endRow &&
+           c===endCol){
+
+            return dist;
+        }
+
+        for(let d of dirs){
+
+            let nr=r+d[0];
+            let nc=c+d[1];
+
+            if(valid(nr,nc) &&
+               !visited[nr+","+nc]){
+
+                visited[nr+","+nc]=true;
+
+                queue.push([nr,nc,dist+1]);
+            }
+        }
+    }
+
+    return 0;
+}
+
+/* BACK */
+
+function backModes(){
+
+    showSection("modeSection");
+}
+
+/* LOGOUT */
+
+function logout(){
+
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>
+```
